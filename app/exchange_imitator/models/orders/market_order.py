@@ -4,7 +4,7 @@ from exchange_imitator.models.orders.base_order import BaseOrder
 class MarketOrder(BaseOrder):
 
     def __init__(self, direction, order_type, quantity,
-                 asset_name,  execution_price, timeframe) -> None:
+                 asset_name, execution_price, timeframe) -> None:
 
         self.execution_price = execution_price
 

@@ -2,13 +2,15 @@ import logging
 from typing import List
 
 import pandas as pd
+
 import psycopg2
 from psycopg2 import sql
-from data.consts import SUPPORTED_LIST
 
 from utils.config import (POSTGRES_DB, POSTGRES_HOST, POSTGRES_PASSWORD,
                           POSTGRES_PORT, POSTGRES_USER)
 from utils.logging import logger
+
+from data.consts import SUPPORTED_LIST
 
 
 class PostgresDB:
@@ -86,9 +88,8 @@ class PostgresDB:
         params = (time, timeframe)
 
         try:
-            row = self._read(query, params)[0]
+            row = self._read(query, params)
         except Exception as e:
-            row = (1, 1, 1, 1, 1, 1, 1, 1)
             logging.debug(e)
 
         return row
@@ -180,15 +181,13 @@ class PostgresDB:
         """
 
         try:
-            connection = psycopg2.connect(
-                                        user=POSTGRES_USER,
-                                        password=POSTGRES_PASSWORD,
-                                        host=POSTGRES_HOST,
-                                        port=POSTGRES_PORT,
-                                        database=POSTGRES_DB
-                                        )
+            connection = psycopg2.connect(user=POSTGRES_USER,
+                                          password=POSTGRES_PASSWORD,
+                                          host=POSTGRES_HOST,
+                                          port=POSTGRES_PORT,
+                                          database=POSTGRES_DB)
 
-        except (Exception) as exception:
+        except Exception as exception:
             logging.exception(f'There was a problem during creating connection: {str(exception)}')
 
         return connection
@@ -249,7 +248,7 @@ class PostgresDB:
 
     def initiate_tedtBD(self):
 
-        one_tick = 3600*24
+        one_tick = 3600 * 24
         unix_time = 1612051200
 
         for i in range(200):

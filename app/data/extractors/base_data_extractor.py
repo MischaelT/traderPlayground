@@ -25,10 +25,9 @@ class BaseDataExtractor(ABC):
         pass
 
     @abstractmethod
-    def _save_historical_data(self): 
+    def _save_historical_data(self):
         """
             Method that save data to DB
         """
 
         pass
-

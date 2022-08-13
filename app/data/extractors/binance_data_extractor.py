@@ -1,8 +1,10 @@
 import asyncio
 
 import requests
+
 from data.choices import BTC, D1, ETH, H1, H4
 from data.extractors.base_data_extractor import BaseDataExtractor
+
 from utils.config import DATE_FROM, DATE_TO
 from utils.logging import logger
 
@@ -12,7 +14,7 @@ class BinanceDataExtractor(BaseDataExtractor):
     def __init__(self) -> None:
 
         self.tickers = {'BTCUSDT': BTC,
-                        'ETHUSDT': ETH,}
+                        'ETHUSDT': ETH}
 
         self.timeframes = {
             '1h': H1,
@@ -22,7 +24,7 @@ class BinanceDataExtractor(BaseDataExtractor):
 
         super().__init__()
 
-    async def initialize_db(self):        
+    async def initialize_db(self):
 
         from_ = DATE_FROM
         to = DATE_TO
@@ -42,13 +44,13 @@ class BinanceDataExtractor(BaseDataExtractor):
 
             for i in range(1, len(h1_periods)):
 
-                from_ = h1_periods[i-1]
+                from_ = h1_periods[i - 1]
                 to = h1_periods[i]
                 tasks.append(self.__get_1h_data(from_, to, ticker))
 
             for i in range(1, len(h4_periods)):
 
-                from_ = h4_periods[i-1]
+                from_ = h4_periods[i - 1]
                 to = h4_periods[i]
                 tasks.append(self.__get_4h_data(from_, to, ticker))
 
@@ -63,7 +65,7 @@ class BinanceDataExtractor(BaseDataExtractor):
 
         while True:
 
-            time += 36000*500
+            time += 36000 * 500
 
             if time > to:
                 break
@@ -79,7 +81,7 @@ class BinanceDataExtractor(BaseDataExtractor):
 
         while True:
 
-            time += 3600000*4*500
+            time += 3600000 * 4 * 500
 
             if time > to:
                 break
@@ -148,7 +150,7 @@ class BinanceDataExtractor(BaseDataExtractor):
             kline = list(kline)
             logger.debug(kline)
 
-            kline[0] = int(kline[0]/1000)
+            kline[0] = int(kline[0] / 1000)
 
             for i in range(1, 6):
                 kline[i] = round(float(kline[i]), 2)

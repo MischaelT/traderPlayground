@@ -1,4 +1,4 @@
-from data.choices import BTC, ETH, TEST
+from data.choices import BTC, ETH
 
 
-SUPPORTED_LIST = [BTC, ETH, TEST]
+SUPPORTED_LIST = [BTC, ETH]

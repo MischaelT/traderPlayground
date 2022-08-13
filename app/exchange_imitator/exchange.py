@@ -3,7 +3,7 @@ from typing import Dict, List, Union
 from data.choices import BUY, D1, H1, H4, LIMIT, MARKET, OCO, SELL, STOP_LIMIT
 from data.consts import SUPPORTED_LIST
 from data.postgres import PostgresDB
-from utils.config import MULTI_TIMEFRAMES, TIMEFRAME
+
 from utils.logging import logger
 
 from exchange_imitator.models.kline import Kline
@@ -24,12 +24,16 @@ class DemoExchange():
     # TODO Implement OCO orders
     # TODO Implement exchange comission
 
-    def __init__(self, user_balance, days_for_test, trading_list, comission) -> None:
+    def __init__(self, user_balance, trading_list, ticks_for_test, multi_timeframes, timeframe, comission) -> None:
 
         self.db: PostgresDB = PostgresDB()
 
         self.orders_list: List[Union[StopLimitOrder, MarketOrder, OcoOrder, LimitOrder]] = []
         self.assets_list = SUPPORTED_LIST
+        self.ticks_for_test = ticks_for_test
+
+        self.multi_timeframes = multi_timeframes
+        self.timeframe = timeframe
 
         self.user = User(user_balance, trading_list)
 
@@ -37,7 +41,6 @@ class DemoExchange():
         self.current_klines: Dict[Dict[Kline]] = None
         self.tick_number = 1
         self.current_time = 0
-        self.days_for_test = days_for_test
 
         self.comission = comission
 
@@ -47,41 +50,21 @@ class DemoExchange():
 
         tick_number = 0
 
-        while (tick_number < self.days_for_test):
+        while (tick_number < self.ticks_for_test):
 
             logger.info('Day Begins')
-
             logger.info(f'User balance: {self.user.account_balance}')
             logger.info(f'Asset balance: {self.user.asset_balance}')
 
-            result = {}
+            if self.multi_timeframes:
+                klines_data = self.__get_multitimeframes_result(tick_number=tick_number)
+            else:
+                klines_data = self.__get_oneTimeframe_result()
 
-            for asset in self.assets_list:
-                try:
-                    asset_dict = {}
-
-                    if tick_number % 4 == 0:
-                        row = self.db.get_kline_by_time(self.current_time, table_name=asset, timeframe=H4)
-                        asset_dict[H4] = row
-
-                    if tick_number % 24 == 0:
-                        row = self.db.get_kline_by_time(self.current_time, table_name=asset, timeframe=D1)
-                        asset_dict[D1] = row
-
-                    row = self.db.get_kline_by_time(self.current_time, table_name=asset, timeframe=H1)
-
-                    asset_dict[H1] = row
-
-                    result[asset] = asset_dict
-
-                except Exception as e:
-                    logger.debug(e)
-
-            self.__create_klines(result)
-
-            logger.debug(result)
+            result = self.__create_klines(klines_data)
 
             yield result
+
             self.__manage_orders()
             tick_number += 1
 
@@ -113,7 +96,6 @@ class DemoExchange():
         else:
             logger.info('Not enought money')
 
-
     def place_limit_order(self, direction, ticker, quantity, price, timeframe):
 
         logger.info(f'Limit order has been placed on price {price}')
@@ -134,7 +116,6 @@ class DemoExchange():
 
         else:
             logger.info('Not enought money')
-
 
     def place_stopLimit_order(self, direction, ticker, quantity, limit_price, stop_price, timeframe):
 
@@ -161,7 +142,6 @@ class DemoExchange():
 
             logger.info('Not enought money')
 
-
     def place_OCO_order(self, order_type, quantity, ticker, direction, execution_price,
                         signal_price, blocked_amount, bounded_order_id, timeframe):
         pass
@@ -180,48 +160,108 @@ class DemoExchange():
     def get_statistics(self):
         pass
 
+    def __get_multitimeframes_result(self, tick_number):
+
+        result = {}
+
+        for asset in self.assets_list:
+            try:
+                asset_dict = {}
+
+                if tick_number % 4 == 0:
+                    row = self.db.get_kline_by_time(time=self.current_time, table_name=asset, timeframe=H4)
+                    asset_dict[H4] = row[0]
+
+                if tick_number % 24 == 0:
+                    row = self.db.get_kline_by_time(time=self.current_time, table_name=asset, timeframe=D1)
+                    asset_dict[D1] = row[0]
+
+                row = self.db.get_kline_by_time(time=self.current_time, table_name=asset, timeframe=H1)
+
+                asset_dict[H1] = row[0]
+
+                result[asset] = asset_dict
+
+            except Exception as e:
+                logger.debug(e)
+
+        return result
+
+    def __get_oneTimeframe_result(self):
+
+        result = {}
+
+        for asset in self.assets_list:
+            row = self.db.get_kline_by_time(self.current_time, table_name=asset, timeframe=self.timeframe)
+            result[asset] = row[0]
+
+        return result
+
     def __create_klines(self, klines: dict):
 
         """
             Method that creates Klines objects from klines dict
-        """        
+        """
 
-        self.current_klines = {i: {} for i in self.user.trading_list}
+        result = {i: [] for i in self.user.trading_list}
 
-        for asset in self.current_klines:
+        if self.multi_timeframes:
 
-            for timeframe in klines[asset]:
+            for asset in result:
+
+                asset_klines = klines[asset]
+
+                for timeframe in asset_klines:
+
+                    kline_data = asset_klines[timeframe]
+
+                    kline = Kline(tick=self.tick_number,
+                                  open_price=kline_data[1],
+                                  high_price=kline_data[2],
+                                  low_price=kline_data[3],
+                                  close_price=kline_data[4],
+                                  timeframe=timeframe)
+
+                    result[asset].append(kline)
+        else:
+            for asset in result:
+
+                kline_data = klines[asset]
 
                 kline = Kline(tick=self.tick_number,
-                              open_price=klines[asset][timeframe][1],
-                              high_price=klines[asset][timeframe][2],
-                              low_price=klines[asset][timeframe][3],
-                              close_price=klines[asset][timeframe][4])
+                              open_price=kline_data[1],
+                              high_price=kline_data[2],
+                              low_price=kline_data[3],
+                              close_price=kline_data[4],
+                              timeframe=self.timeframe)
 
-                self.current_klines[asset][timeframe] = kline
+                result[asset].append(kline)
+
+        return result
 
     def __initialize_timeframe(self):
 
         """
-            Method initialize timeframes based on config settings 
-        """        
+            Method initialize timeframes based on config settings
+        """
 
-        if not MULTI_TIMEFRAMES:
+        if not self.multi_timeframes:
 
-            if TIMEFRAME == H1:
+            if self.timeframe == H1:
                 self.one_tick = 3600
-                self.tick_number = self.days_for_test*24
-            elif TIMEFRAME == H4:
-                self.one_tick = 3600*4
-                self.tick_number = self.days_for_test*4
-            elif TIMEFRAME == D1:
-                self.one_tick = 3600*24
-                self.tick_number = self.days_for_test
+                self.tick_number = self.ticks_for_test * 24
+            elif self.timeframe == H4:
+                self.one_tick = 3600 * 4
+                self.tick_number = self.ticks_for_test * 4
+            elif self.timeframe == D1:
+                self.one_tick = 3600 * 24
+                self.tick_number = self.ticks_for_test
         else:
             self.one_tick = 3600
-            self.tick_number = self.days_for_test*24
-            self.current_time = self.db.get_latest_klines(number=1,table_name=self.assets_list[0], timeframe=D1)[0][0] - self.one_tick*self.tick_number  # noqa
-            logger.debug(self.current_time)
+            self.tick_number = self.ticks_for_test * 24
+
+        self.current_time = self.db.get_latest_klines(timeframe=D1, number=1, table_name=self.assets_list[0])[0][0] - self.one_tick * self.tick_number  # noqa
+        logger.debug(self.current_time)
 
     def __is_not_null_balance(self, ticker, direction, quantity, price) -> bool:
 
@@ -233,7 +273,7 @@ class DemoExchange():
         """
 
         if direction == BUY:
-            balance = self.user.account_balance - quantity * price * (1+self.comission)
+            balance = self.user.account_balance - quantity * price * (1 + self.comission)
         elif direction == SELL:
             balance = self.user.asset_balance[ticker] - quantity
 
@@ -270,7 +310,7 @@ class DemoExchange():
 
         elif order.direction == BUY:
 
-            order.blocked_balance = order.quantity * order.execution_price * (1+self.comission)
+            order.blocked_balance = order.quantity * order.execution_price * (1 + self.comission)
             self.user.account_balance -= order.blocked_balance
             logger.debug(order.blocked_balance)
 
