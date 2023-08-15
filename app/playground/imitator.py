@@ -14,7 +14,6 @@ class Imitator():
     def __init__(self, user_balance: int, trading_list: list, ticks_for_test: int,
                  comission: float, multi_timeframes: bool = False, timeframe=D1) -> None:
 
-        self.__exchange = DemoExchange(user_balance, trading_list, ticks_for_test, multi_timeframes, timeframe, comission=comission)
 
         self.__klines_generator = self.__exchange.tick_generator()
 
