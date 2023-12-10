@@ -1,26 +1,115 @@
+import asyncio
+from datetime import datetime
 from typing import Dict, List, Union
 
+import pandas as pd
 from data.choices import BUY, D1, H1, H4, LIMIT, MARKET, OCO, SELL, STOP_LIMIT
-from data.consts import SUPPORTED_LIST
-from data.postgres import PostgresDB
-
+from playground.models.orders import (LimitOrder, MarketOrder, OcoOrder,
+                                      StopLimitOrder)
+from playground.models.user import User
 from utils.logging import logger
 
-from exchange_imitator.models.kline import Kline
-from exchange_imitator.models.orders.limit_order import LimitOrder
-from exchange_imitator.models.orders.market_order import MarketOrder
-from exchange_imitator.models.orders.oco_order import OcoOrder
-from exchange_imitator.models.orders.stopLimit_order import StopLimitOrder
-from exchange_imitator.models.user import User
+
+class DemoExchange:
+    def __init__(self):
+        self.current_time = 0
+        self.is_running = False
+        self.last_activity = datetime.now()  # Track last activity time
+        self.order_id_counter = 1
+
+        self.multiplier = 1
+        self.commission = 0  # Added commission variable with initial value 0
+
+    @property
+    def commission(self) -> float:
+        return self._commission
+
+    @commission.setter
+    def commission(self, value: float):
+        if value >= 0:
+            self._commission = value
+            logger.info(f"Commission set to {value}")
+        else:
+            logger.warning("Commission value should be non-negative.")
+
+    @property
+    def multiplier(self) -> float:
+        return self._multiplier
+
+    @multiplier.setter
+    def multiplier(self, value: float):
+        if value > 0:
+            self._multiplier = value
+            logger.info(f"Multiplier set to {value}")
+        else:
+            logger.warning("Multiplier value should be greater than 0.")
+
+    def place_order(self, order: Union[LimitOrder, MarketOrder, OcoOrder, StopLimitOrder]) -> int:
+        order_id = self.order_id_counter
+        self.order_id_counter += 1
+        self.orders_list = self.orders_list.append(order.__dict__, ignore_index=True)
+        logger.info(f"Order placed: {order}")
+        return order_id
+
+    def get_order_by_id(self, order_id: int) -> Union[MarketOrder, None]:
+        order_row = self.orders_list[self.orders_list['order_id'] == order_id]
+        if not order_row.empty:
+            order = MarketOrder(**order_row.iloc[0].to_dict())
+            logger.info(f"Retrieved order by ID: {order}")
+            return order
+        logger.warning(f"No order found with ID: {order_id}")
+        return None
+
+    def get_orders_by_user_id(self, user_id: int) -> List[MarketOrder]:
+        user_orders = self.orders_list[self.orders_list['user_id'] == user_id]
+        orders = []
+        for _, row in user_orders.iterrows():
+            order = MarketOrder(**row.to_dict())
+            orders.append(order)
+        logger.info(f"Retrieved orders by user ID: {user_id}")
+        return orders
+
+    async def fetch_data(self, user_id: int):
+        while self.is_running:
+            await asyncio.sleep(1 / self.multiplier)
+            self.current_time += 1
+            self.update_data(user_id)
+            self.last_activity = datetime.now()  # Update last activity time
+            logger.info(f"Fetched data for user {user_id}, current time: {self.current_time}")
+
+    def start(self, user_id: int):
+        if not self.is_running:
+            self.is_running = True
+            asyncio.create_task(self.fetch_data(user_id))
+            logger.info(f"Exchange started for user {user_id}")
+
+    def stop(self):
+        self.is_running = False
+        logger.info("Exchange stopped")
+
+    def set_multiplier(self, multiplier: float):
+        self.multiplier = multiplier
+        logger.info(f"Multiplier set to {multiplier}")
 
 
-class DemoExchange():
+
+
+
+
+
+
+
+
+
+
+
+
+class DemoExchangeOLD():
 
     """
         Class that imitates flow of exchange on historical data from database
 
     """
-
     # TODO Implement OCO orders
     # TODO Implement exchange comission
 

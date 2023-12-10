@@ -1,9 +1,10 @@
 from fastapi import FastAPI
-from playground.api import register_endpoints
-
+from routers import auth, exchange_managements, trade_management
 
 if __name__ == '__main__':
 
     app = FastAPI()
 
-    register_endpoints(app)
+    app.include_router(auth.router, prefix="/auth")
+    app.include_router(exchange_managements.router, prefix="/playground/exchange")
+    app.include_router(trade_management.router, prefix="/playground/exchange/trade")
