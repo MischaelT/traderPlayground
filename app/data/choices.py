@@ -1,5 +1,5 @@
 from dataclasses import dataclass, fields
-from data.models import LimitOrder, MarketOrder, OcoOrder, StopLimitOrder
+from app.data.models import LimitOrder, MarketOrder, OcoOrder, StopLimitOrder
 
 
 BTC = "btc"
