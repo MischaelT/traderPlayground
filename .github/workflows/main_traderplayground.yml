@@ -29,7 +29,13 @@ jobs:
       
       - name: Install dependencies
         run: pip install -r requirements.txt
+
         
+      - name: Archive application files
+        uses: actions/upload-artifact@v3
+        with:
+          name: python-app
+          path: ./app
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
       # - name: Zip artifact for deployment
