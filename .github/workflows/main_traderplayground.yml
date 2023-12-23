@@ -79,5 +79,5 @@ jobs:
 
       - name: Run uvicorn command
         run: |
-          az webapp up --name traderplayground --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --command "uvicorn app.main:app --reload"
+          az webapp up --name traderplayground --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }}
           
