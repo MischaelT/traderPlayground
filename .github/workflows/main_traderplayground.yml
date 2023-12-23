@@ -13,12 +13,12 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-  
+
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Python version
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v1
         with:
           python-version: '3.10'
 
@@ -29,7 +29,6 @@ jobs:
       
       - name: Install dependencies
         run: pip install -r requirements.txt
-
         
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
@@ -66,9 +65,9 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v1
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_4457AC5FAB8F4EF79E886A9C904F177F }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_5924AF9273CE4B498E0B87F907F07063 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_C7D5431967E14D5F979C3E238B921860 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_0E21892B3D39471890247C026ECFE8C0 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_7849B5C183B64C1F9D95DA16CDBF3203 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_FD62CABB863C4929B4636FA98637F1BE }}
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v2
@@ -76,3 +75,4 @@ jobs:
         with:
           app-name: 'traderplayground'
           slot-name: 'Production'
+          
