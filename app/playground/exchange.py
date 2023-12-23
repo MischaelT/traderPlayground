@@ -2,11 +2,11 @@ import asyncio
 from datetime import datetime
 from typing import List, Tuple, Union
 
-from data.choices import BUY, SELL
-from data.db import get_session
-from data.models import Balance, BaseOrder, Kline, User
-from utils.logger import logger
-from data.choices import AssetType, TransactionType
+from app.data.choices import BUY, SELL
+from app.data.db import get_session
+from app.data.models import Balance, BaseOrder, Kline, User
+from app.utils.logger import logger
+from app.data.choices import AssetType, TransactionType
 
 
 class DemoExchange:
