@@ -76,8 +76,3 @@ jobs:
         with:
           app-name: 'traderplayground'
           slot-name: 'Production'
-
-      - name: Run uvicorn command
-        run: |
-          az webapp up --name traderplayground --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }}
-          
